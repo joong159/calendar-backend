@@ -31,15 +31,16 @@ app.post('/get-calendar-events', async (req, res) => {
 
         const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
+        // --- 수정된 부분: 올해 1월 1일부터 12월 31일까지의 이벤트를 가져옵니다. ---
         const now = new Date();
-        // 넉넉하게 3달치 이벤트를 가져오도록 수정
-        const threeMonthsLater = new Date(now.getFullYear(), now.getMonth() + 3, now.getDate());
+        const startOfYear = new Date(now.getFullYear(), 0, 1); // 올해 시작일
+        const endOfYear = new Date(now.getFullYear(), 11, 31); // 올해 마지막일
 
         const apiResponse = await calendar.events.list({
             calendarId: 'primary',
-            timeMin: now.toISOString(),
-            timeMax: threeMonthsLater.toISOString(),
-            maxResults: 250, // 더 많은 이벤트를 가져옵니다
+            timeMin: startOfYear.toISOString(),
+            timeMax: endOfYear.toISOString(),
+            maxResults: 1000, // 1년치 데이터를 위해 더 많은 이벤트를 가져옵니다
             singleEvents: true,
             orderBy: 'startTime',
         });
@@ -59,7 +60,6 @@ app.post('/get-calendar-events', async (req, res) => {
                     title: event.summary,
                     time: event.start.dateTime ? new Date(event.start.dateTime).toLocaleTimeString('ko-KR') : '하루 종일',
                     description: event.description || '설명 없음',
-                    // --- 중요: 작성자 이메일 정보 추가 ---
                     creator: event.creator ? event.creator.email : '알 수 없음'
                 });
             });
